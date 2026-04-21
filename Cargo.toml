@@ -1,6 +1,6 @@
 [package]
 name = "touchstone-rs"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Phillip Wenig"]
 description = "A Rust library for benchmarking streaming anomaly detectors against labeled time-series datasets"
@@ -14,7 +14,7 @@ categories = ["algorithms", "development-tools::testing"]
 [dependencies]
 polars = { version = "0.53", features = ["csv", "lazy"] }
 anyhow = "1"
-indicatif = "0.17"
+indicatif = "0.18"
 
 [dev-dependencies]
 tempfile = "3"

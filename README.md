@@ -1,7 +1,7 @@
 [![crates.io](https://img.shields.io/crates/v/touchstone-rs?label=latest)](https://crates.io/crates/touchstone-rs)
 ![Tests on main](https://github.com/wenig/touchstone-rs/workflows/Rust/badge.svg)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Dependency Status](https://deps.rs/crate/touchstone-rs/0.1.1/status.svg)](https://deps.rs/crate/touchstone-rs/0.1.1)
+[![Dependency Status](https://deps.rs/crate/touchstone-rs/0.1.2/status.svg)](https://deps.rs/crate/touchstone-rs/0.1.2)
 ![Downloads](https://img.shields.io/crates/d/touchstone-rs.svg)
 
 # Touchstone-rs
