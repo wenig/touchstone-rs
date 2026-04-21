@@ -1,3 +1,9 @@
+[![crates.io](https://img.shields.io/crates/v/touchstone-rs?label=latest)](https://crates.io/crates/touchstone-rs)
+![Tests on main](https://github.com/wenig/touchstone-rs/workflows/Rust/badge.svg)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Dependency Status](https://deps.rs/crate/touchstone-rs/0.1.1/status.svg)](https://deps.rs/crate/touchstone-rs/0.1.1)
+![Downloads](https://img.shields.io/crates/d/touchstone-rs.svg)
+
 # Touchstone-rs
 
 Touchstone-rs is a Rust library for evaluating streaming anomaly detectors on labeled time-series benchmark datasets. Point it at a directory of CSVs, register one or more detectors, call `run()`, and get back a [Polars](https://pola.rs/) DataFrame with one row per `(dataset, detector)` pair.
@@ -187,6 +193,6 @@ If you use Touchstone-rs or the TimeEval dataset collection in your work, please
   title = {Touchstone-rs: A Rust Library for Benchmarking Streaming Anomaly Detectors},
   author = {Wenig, Phillip},
   date = {2026},
-  url = {https://github.com/wenig/touchstone}
+  url = {https://github.com/wenig/touchstone-rs}
 }
 ```
