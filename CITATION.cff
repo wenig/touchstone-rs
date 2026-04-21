@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Touchstone-rs: A Rust Library for Benchmarking Streaming Anomaly Detectors"
+authors:
+  - family-names: Wenig
+    given-names: Phillip
+date-released: 2026
+url: "https://github.com/wenig/touchstone"

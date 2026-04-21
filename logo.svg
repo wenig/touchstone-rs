@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 568 566" fill="none">
+  <path
+    transform="translate(-495.5 -230.5)"
+    d="M548 283
+       H1011
+       V493
+       H887
+       V784
+       H746
+       V423
+       H622
+       V353
+       H938
+       V423
+       H816
+       V714
+       H676
+       V493
+       H548
+       V283"
+    stroke="#000"
+    stroke-width="35"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+</svg>
