@@ -29,10 +29,13 @@ Your algorithm must implement a single trait:
 
 ```rust
 pub trait Detector: Send {
+    fn name() -> &'static str where Self: Sized;
+    fn new(n_dimensions: usize) -> Self where Self: Sized;
     fn update(&mut self, point: &[f32]) -> f32;
 }
 ```
 
+- `name()` returns the display name used in the results DataFrame and comparison tables.
 - `point` is a slice of `f32` features for the current time step. The length matches the number of feature columns in the dataset.
 - Return an **anomaly score** as `f32`. Higher values mean more anomalous.
 - Return `f32::NAN` during warmup or whenever a score is not yet meaningful. NaN points are excluded from metric computation.
@@ -44,15 +47,15 @@ pub trait Detector: Send {
 use std::path::Path;
 use touchstone_rs::{Detector, Touchstone};
 
-struct MyDetector { n_dims: usize }
-
-impl MyDetector {
-    fn new(n_dims: usize) -> Self {
-        MyDetector { n_dims }
-    }
-}
+struct MyDetector { n_dimensions: usize }
 
 impl Detector for MyDetector {
+    fn name() -> &'static str { "MyDetector-v1" }
+
+    fn new(n_dimensions: usize) -> Self {
+        MyDetector { n_dimensions }
+    }
+
     fn update(&mut self, point: &[f32]) -> f32 {
         // compute and return anomaly score
         0.5
@@ -62,13 +65,9 @@ impl Detector for MyDetector {
 fn main() {
     let mut experiment = Touchstone::new(Path::new("data"));
 
-    // The factory closure receives `n_dimensions` at runtime — use it to size
-    // internal buffers to match the dataset's feature count.
-    experiment.add_detector("MyDetector-v1", |n_dims| MyDetector::new(n_dims));
-
-    // Multiple detectors can be registered and are evaluated in a single pass:
-    // experiment.add_detector("MyDetector-window10", |n| MyDetector::new(n));
-    // experiment.add_detector("MyDetector-window50", |n| MyDetector::new(n));
+    // `new(n_dimensions)` receives the dataset's feature count at runtime —
+    // use it to size internal buffers to match.
+    experiment.add_detector::<MyDetector>();
 
     let df = experiment.run().unwrap();
     println!("{df}");
@@ -109,11 +108,10 @@ use touchstone_rs::{Detector, Touchstone};
 use touchstone_rs::metrics::{RocAuc, F1Score, SigmaThreshold};
 
 # struct MyDetector { n_dims: usize }
-# impl MyDetector { fn new(n_dims: usize) -> Self { MyDetector { n_dims } } }
-# impl Detector for MyDetector { fn update(&mut self, _: &[f32]) -> f32 { 0.5 } }
+# impl Detector for MyDetector { fn name() -> &'static str { "MyDetector" } fn new(n_dims: usize) -> Self { MyDetector { n_dims } } fn update(&mut self, _: &[f32]) -> f32 { 0.5 } }
 
 let mut experiment = Touchstone::new(Path::new("data"));
-experiment.add_detector("MyDetector", |n| MyDetector::new(n));
+experiment.add_detector::<MyDetector>();
 experiment.add_metric(RocAuc);
 experiment.add_metric(F1Score::new(SigmaThreshold(3.0)));
 ```
@@ -158,6 +156,10 @@ cargo run --example normal_distribution_detector
 ```
 
 This runs a rolling z-score detector (window = 20) against all datasets in `data/` and prints the results.
+
+## Contributing an Algorithm
+
+Touchstone-rs accepts new streaming anomaly detectors via pull request — each one lives as its own crate under `algorithms/` and is picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork → add crate → implement `Detector` → open PR) and how CI validates submissions.
 
 ## References
 

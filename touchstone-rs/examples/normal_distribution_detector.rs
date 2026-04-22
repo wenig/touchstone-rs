@@ -15,6 +15,20 @@ struct NormalDistributionDetector {
 }
 
 impl Detector for NormalDistributionDetector {
+    fn name() -> &'static str {
+        "NormalDistribution-20"
+    }
+
+    fn new(n_dimensions: usize) -> Self
+    where
+        Self: Sized,
+    {
+        NormalDistributionDetector {
+            n_dimensions,
+            buffer: VecDeque::with_capacity(20),
+        }
+    }
+
     /// Returns `NaN` during warmup, then a summed absolute z-score.
     fn update(&mut self, point: &[f32]) -> f32 {
         if point.len() != self.n_dimensions || self.n_dimensions == 0 {
@@ -60,12 +74,7 @@ impl Detector for NormalDistributionDetector {
 fn main() {
     // Run the example against local Touchstone datasets.
     let mut experiment = Touchstone::new(Path::new("data"));
-    experiment.add_detector("NormalDistribution-20", |n_dimensions| {
-        NormalDistributionDetector {
-            n_dimensions,
-            buffer: VecDeque::with_capacity(20),
-        }
-    });
+    experiment.add_detector::<NormalDistributionDetector>();
     let report_df = experiment.run().unwrap();
     println!("{report_df}");
 }
