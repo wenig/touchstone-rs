@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 568 566" fill="none">
+  <defs>
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fe6e03"/>
+      <stop offset="100%" stop-color="#f5960b"/>
+    </linearGradient>
+  </defs>
   <path
     transform="translate(-495.5 -230.5)"
     d="M548 283
@@ -18,7 +24,7 @@
        V493
        H548
        V283"
-    stroke="#000"
+    stroke="url(#orangeGradient)"
     stroke-width="35"
     stroke-linecap="square"
     stroke-linejoin="miter"
