@@ -12,7 +12,7 @@
 
 Touchstone-rs is a Rust library for evaluating streaming anomaly detectors on labeled time-series benchmark datasets. Point it at a directory of CSVs, register one or more detectors, call `run()`, and get back a [Polars](https://pola.rs/) DataFrame with one row per `(dataset, detector)` pair.
 
-Touchstone-rs is made in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\] — a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
+Touchstone-rs is made in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\], a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
 
 ## Quickstart
 
@@ -29,10 +29,13 @@ Your algorithm must implement a single trait:
 
 ```rust
 pub trait Detector: Send {
+    fn name() -> &'static str where Self: Sized;
+    fn new(n_dimensions: usize) -> Self where Self: Sized;
     fn update(&mut self, point: &[f32]) -> f32;
 }
 ```
 
+- `name()` returns the display name used in the results DataFrame and comparison tables.
 - `point` is a slice of `f32` features for the current time step. The length matches the number of feature columns in the dataset.
 - Return an **anomaly score** as `f32`. Higher values mean more anomalous.
 - Return `f32::NAN` during warmup or whenever a score is not yet meaningful. NaN points are excluded from metric computation.
@@ -44,15 +47,15 @@ pub trait Detector: Send {
 use std::path::Path;
 use touchstone_rs::{Detector, Touchstone};
 
-struct MyDetector { n_dims: usize }
-
-impl MyDetector {
-    fn new(n_dims: usize) -> Self {
-        MyDetector { n_dims }
-    }
-}
+struct MyDetector { n_dimensions: usize }
 
 impl Detector for MyDetector {
+    fn name() -> &'static str { "MyDetector-v1" }
+
+    fn new(n_dimensions: usize) -> Self {
+        MyDetector { n_dimensions }
+    }
+
     fn update(&mut self, point: &[f32]) -> f32 {
         // compute and return anomaly score
         0.5
@@ -62,13 +65,9 @@ impl Detector for MyDetector {
 fn main() {
     let mut experiment = Touchstone::new(Path::new("data"));
 
-    // The factory closure receives `n_dimensions` at runtime — use it to size
-    // internal buffers to match the dataset's feature count.
-    experiment.add_detector("MyDetector-v1", |n_dims| MyDetector::new(n_dims));
-
-    // Multiple detectors can be registered and are evaluated in a single pass:
-    // experiment.add_detector("MyDetector-window10", |n| MyDetector::new(n));
-    // experiment.add_detector("MyDetector-window50", |n| MyDetector::new(n));
+    // `new(n_dimensions)` receives the dataset's feature count at runtime,
+    // use it to size internal buffers to match.
+    experiment.add_detector::<MyDetector>();
 
     let df = experiment.run().unwrap();
     println!("{df}");
@@ -109,11 +108,10 @@ use touchstone_rs::{Detector, Touchstone};
 use touchstone_rs::metrics::{RocAuc, F1Score, SigmaThreshold};
 
 # struct MyDetector { n_dims: usize }
-# impl MyDetector { fn new(n_dims: usize) -> Self { MyDetector { n_dims } } }
-# impl Detector for MyDetector { fn update(&mut self, _: &[f32]) -> f32 { 0.5 } }
+# impl Detector for MyDetector { fn name() -> &'static str { "MyDetector" } fn new(n_dims: usize) -> Self { MyDetector { n_dims } } fn update(&mut self, _: &[f32]) -> f32 { 0.5 } }
 
 let mut experiment = Touchstone::new(Path::new("data"));
-experiment.add_detector("MyDetector", |n| MyDetector::new(n));
+experiment.add_detector::<MyDetector>();
 experiment.add_metric(RocAuc);
 experiment.add_metric(F1Score::new(SigmaThreshold(3.0)));
 ```
@@ -145,11 +143,17 @@ timestamp, feature_1, ..., feature_N, label
 2016-04-20 10:35:13, 5.6, 7.8, 1
 ```
 
-- **Column 1**: timestamp — parsed but ignored
-- **Columns 2 … N**: features — cast to `f32`, passed as `point` to `update()`
-- **Last column**: binary anomaly label — `0` (normal) or `1` (anomaly)
+- **Column 1**: timestamp | parsed but ignored
+- **Columns 2 … N**: features | cast to `f32`, passed as `point` to `update()`
+- **Last column**: binary anomaly label | `0` (normal) or `1` (anomaly)
 
 Touchstone-rs passes every row to `update()` in order, simulating a streaming environment. Each detector gets a fresh instance per dataset.
+
+## Benchmark Dataset Selection Methodology
+
+To ensure efficient and representative evaluation, we employ a data-driven approach to select a diverse subset of datasets from the TimeEval collection. Starting from 976 unique benchmark datasets spanning 16 different data sources, we extract feature vectors representing each dataset's performance profile across all 60 algorithms. These vectors capture five key metrics: ROC-AUC, PR-AUC, Range PR-AUC, Average Precision, and execution time. We then apply k-medoids clustering independently on univariate (902 datasets) and multivariate (74 datasets) subsets with k=10 for each, selecting the medoid dataset from each cluster as a representative. After filtering for public availability, we obtain 19 representative datasets (10 univariate + 9 multivariate from 6 distinct collections). This approach ensures two critical properties: (1) **diversity**, each selected dataset represents a distinct performance pattern, preventing redundant evaluation of algorithmically similar benchmarks, and (2) **representation**, we maintain balanced coverage of both univariate and multivariate time series despite class imbalance in the full collection. We additionally include the CoMuT synthetic dataset, which is purpose-designed to evaluate correlation anomalies (anomalies invisible in individual channels but visible only through multivariate relationships) complementing TimeEval's focus on point and subsequence anomalies. The resulting 20-dataset benchmark reduces computational cost by 98% while covering both standard detection patterns and correlation-based detection, enabling fast iteration during development while maintaining statistical robustness for final validation.
+
+See [`DATASETS.md`](DATASETS.md) for the complete list of benchmark datasets and their sources.
 
 ## Running the Built-in Example
 
@@ -158,6 +162,10 @@ cargo run --example normal_distribution_detector
 ```
 
 This runs a rolling z-score detector (window = 20) against all datasets in `data/` and prints the results.
+
+## Contributing an Algorithm
+
+Touchstone-rs accepts new streaming anomaly detectors via pull request, each one living as its own crate under `algorithms/` and picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork → add crate → implement `Detector` → open PR) and how CI validates submissions.
 
 ## References
 

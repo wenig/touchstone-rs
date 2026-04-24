@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>touchstone-rs · leaderboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-elevated: #141419;
+      --bg-row: #1a1a20;
+      --border: #2a2a35;
+      --text: #f5f5f7;
+      --text-dim: #9a9aa5;
+      --accent: #ff6b2c;
+      --accent-soft: rgba(255, 107, 44, 0.12);
+      --accent-glow: rgba(255, 107, 44, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 80% 50% at 80% 0%, var(--accent-soft), transparent 60%),
+        var(--bg);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-mark {
+      width: 3.25rem;
+      height: 3.25rem;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .logo-mark svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .title-group h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .title-group h1 .suffix {
+      color: var(--accent);
+    }
+
+    .tagline {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .table-wrapper {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      text-align: right;
+      font-weight: 600;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 1rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      background: var(--bg-elevated);
+      position: sticky;
+      top: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead th:first-child {
+      cursor: default;
+    }
+
+    thead th:first-child,
+    thead th:nth-child(2) {
+      text-align: left;
+    }
+
+    thead th:hover:not(:first-child) {
+      color: var(--text);
+    }
+
+    thead th.sort-asc,
+    thead th.sort-desc {
+      color: var(--accent);
+    }
+
+    thead th .sort-arrow {
+      display: inline-block;
+      margin-left: 0.3rem;
+      opacity: 0.4;
+      font-size: 0.65rem;
+    }
+
+    thead th.sort-asc .sort-arrow,
+    thead th.sort-desc .sort-arrow {
+      opacity: 1;
+    }
+
+    tbody td {
+      padding: 0.9rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-row);
+    }
+
+    td.rank {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-dim);
+      width: 3rem;
+    }
+
+    td.detector {
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    td.detector a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    td.detector a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    tbody tr.rank-1 td.rank,
+    tbody tr.rank-1 td.detector {
+      color: var(--accent);
+    }
+
+    tbody tr.rank-1 {
+      background: var(--accent-soft);
+    }
+
+    tbody tr.rank-1:hover {
+      background: rgba(255, 107, 44, 0.18);
+    }
+
+    .medal {
+      display: inline-block;
+      width: 1.4rem;
+      text-align: center;
+      margin-right: 0.25rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .download-link {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+
+    .download-link:hover {
+      text-decoration: underline;
+    }
+
+    .empty {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-dim);
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 1.5rem 1rem; }
+      header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .title-group h1 { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-mark">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 568 566" fill="none">
+          <defs>
+            <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fe6e03"/>
+              <stop offset="100%" stop-color="#f5960b"/>
+            </linearGradient>
+          </defs>
+          <path
+            transform="translate(-495.5 -230.5)"
+            d="M548 283 H1011 V493 H887 V784 H746 V423 H622 V353 H938 V423 H816 V714 H676 V493 H548 V283"
+            stroke="url(#orangeGradient)"
+            stroke-width="35"
+            stroke-linecap="square"
+            stroke-linejoin="miter"
+          />
+        </svg>
+      </div>
+      <div class="title-group">
+        <h1>touchstone<span class="suffix">-rs</span></h1>
+        <div class="tagline">Evaluate · Compare · Advance</div>
+      </div>
+    </header>
+
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:0.75rem;">
+      <div class="section-label" style="margin-bottom:0;">Leaderboard</div>
+      <a href="results.csv" download class="download-link">↓ Download CSV</a>
+    </div>
+    <h2 class="section-title">Streaming anomaly detectors, ranked by ROC-AUC</h2>
+
+    <div class="table-wrapper">
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th data-col="1">Detector <span class="sort-arrow">↕</span></th>
+            <th data-col="2" class="sort-desc">ROC-AUC <span class="sort-arrow">↓</span></th><th data-col="3" >PR-AUC <span class="sort-arrow">↕</span></th><th data-col="4" >AvgPrec <span class="sort-arrow">↕</span></th><th data-col="5" >Precision <span class="sort-arrow">↕</span></th><th data-col="6" >Recall <span class="sort-arrow">↕</span></th><th data-col="7" >F1 <span class="sort-arrow">↕</span></th><th data-col="8" >RangePrec <span class="sort-arrow">↕</span></th><th data-col="9" >RangeRec <span class="sort-arrow">↕</span></th><th data-col="10" >RangeF1 <span class="sort-arrow">↕</span></th><th data-col="11" >RangePR-AUC <span class="sort-arrow">↕</span></th><th data-col="12" >RangePR-VUS <span class="sort-arrow">↕</span></th><th data-col="13" >RangeROC-VUS <span class="sort-arrow">↕</span></th><th data-col="14" >time_sec <span class="sort-arrow">↕</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr class="rank-1">
+            <td class="rank">
+              <span class="medal">🥇</span>
+            </td>
+            <td class="detector"><a href="https://github.com/wenig/touchstone-rs/tree/develop/algorithms/baseline" target="_blank" rel="noopener">Baseline</a></td>
+            
+            <td>0.5168</td>
+            
+            <td>0.0105</td>
+            
+            <td>0.0108</td>
+            
+            <td>0.0100</td>
+            
+            <td>0.1000</td>
+            
+            <td>0.0182</td>
+            
+            <td>0.0100</td>
+            
+            <td>0.0012</td>
+            
+            <td>0.0021</td>
+            
+            <td>0.0081</td>
+            
+            <td>0.0177</td>
+            
+            <td>0.5214</td>
+            
+            <td>0.0000</td>
+            
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+
+    <footer>
+      <div>A benchmarking framework for streaming anomaly detection algorithms.</div>
+      <div><a href="https://github.com/wenig/touchstone-rs">github.com/wenig/touchstone-rs</a></div>
+    </footer>
+  </div>
+  <script>
+    const table = document.querySelector('table');
+    if (table) {
+      let sortCol = null;
+      let sortDesc = true;
+
+      const medals = ['🥇', '🥈', '🥉'];
+
+      function updateRanks() {
+        table.querySelectorAll('tbody tr').forEach((row, i) => {
+          const rankCell = row.querySelector('td.rank span.medal');
+          rankCell.textContent = medals[i] ?? String(i + 1);
+          row.className = i === 0 ? 'rank-1' : '';
+        });
+      }
+
+      function sortBy(th) {
+        const col = parseInt(th.dataset.col);
+        const isNumeric = col > 1;
+        const alreadySorted = sortCol === col;
+        sortDesc = alreadySorted ? !sortDesc : isNumeric;
+        sortCol = col;
+
+        table.querySelectorAll('thead th[data-col]').forEach(h => {
+          h.classList.remove('sort-asc', 'sort-desc');
+          h.querySelector('.sort-arrow').textContent = '↕';
+        });
+        th.classList.add(sortDesc ? 'sort-desc' : 'sort-asc');
+        th.querySelector('.sort-arrow').textContent = sortDesc ? '↓' : '↑';
+
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+          const av = a.querySelectorAll('td')[col].textContent.trim();
+          const bv = b.querySelectorAll('td')[col].textContent.trim();
+          const an = parseFloat(av), bn = parseFloat(bv);
+          const cmp = isNumeric
+            ? (isNaN(an) ? 1 : isNaN(bn) ? -1 : an - bn)
+            : av.localeCompare(bv);
+          return sortDesc ? -cmp : cmp;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+        updateRanks();
+      }
+
+      table.querySelectorAll('thead th[data-col]').forEach(th => {
+        th.addEventListener('click', () => sortBy(th));
+      });
+    }
+  </script>
+</body>
+</html>

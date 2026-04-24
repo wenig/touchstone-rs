@@ -1,0 +1,104 @@
+name: Smoketest
+
+on:
+  pull_request_target:
+    types: [labeled]
+    branches: [develop]
+
+jobs:
+  smoketest:
+    if: github.event.label.name == 'run-smoketest'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: none
+      checks: none
+      deployments: none
+      id-token: none
+      issues: none
+      packages: none
+      pages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check only algorithms changed
+        id: check_files
+        run: |
+          NON_ALGO=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -v '^algorithms/')
+          if [ -z "$NON_ALGO" ]; then
+            echo "only_algorithms=true" >> $GITHUB_OUTPUT
+          else
+            echo "only_algorithms=false" >> $GITHUB_OUTPUT
+            echo "Skipping smoketest: non-algorithm files changed:"
+            echo "$NON_ALGO"
+          fi
+
+      - name: Extract detector name
+        if: steps.check_files.outputs.only_algorithms == 'true'
+        run: echo "DETECTOR_NAME=$(./scripts/extract-detector-name.sh)" >> $GITHUB_ENV
+
+      - name: Check touchstone_main! entrypoint
+        if: steps.check_files.outputs.only_algorithms == 'true'
+        run: |
+          DIR=algorithms/${{ env.DETECTOR_NAME }}
+          MAIN=$DIR/src/main.rs
+
+          # Must call touchstone_main!(SomeType) on a non-commented line
+          if ! grep -qE '^\s*touchstone_main!\s*\(\s*\w+\s*\)' "$MAIN"; then
+            echo "Error: $MAIN must contain an uncommented touchstone_main!(TypeName) call"
+            exit 1
+          fi
+
+          # Must not define its own fn main
+          if grep -qE '^\s*fn main\s*\(' "$MAIN"; then
+            echo "Error: $MAIN must not define fn main — touchstone_main! provides it"
+            exit 1
+          fi
+
+          # Must not contain a build script
+          if [ -f "$DIR/build.rs" ]; then
+            echo "Error: $DIR/build.rs is not allowed — build scripts can execute arbitrary code"
+            exit 1
+          fi
+
+          # Must not declare extra [[bin]] targets
+          if grep -q '^\[\[bin\]\]' "$DIR/Cargo.toml"; then
+            echo "Error: $DIR/Cargo.toml must not declare [[bin]] targets — only one binary via touchstone_main! is allowed"
+            exit 1
+          fi
+
+      - name: Build detector
+        if: steps.check_files.outputs.only_algorithms == 'true'
+        run: ./scripts/build-detector.sh ${{ env.DETECTOR_NAME }}
+
+      - name: Run smoketest
+        if: steps.check_files.outputs.only_algorithms == 'true'
+        run: unshare --net env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
+        timeout-minutes: 10

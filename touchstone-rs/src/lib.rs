@@ -1,13 +1,17 @@
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../../README.md")]
 
 pub mod loader;
 pub mod metrics;
 
-use anyhow::Result;
+pub use anyhow::Result;
+
+use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use loader::Dataset;
 use metrics::{Metric, all_metrics, minmax_normalize};
-use polars::prelude::{Column, DataFrame};
+use polars::io::SerWriter;
+use polars::prelude::{Column, CsvWriter, DataFrame};
+use std::fs::File;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -17,6 +21,14 @@ use std::time::Instant;
 /// `update` is called once per point and should return an anomaly score.
 /// Returning `NaN` is allowed (for example during warmup).
 pub trait Detector: Send {
+    /// Display name used in the results DataFrame and comparison tables.
+    fn name() -> &'static str
+    where
+        Self: Sized;
+    /// Initialize a new detector given the dimensionality of the stream.
+    fn new(n_dimensions: usize) -> Self
+    where
+        Self: Sized;
     /// Updates detector state with the next point and returns a score.
     fn update(&mut self, point: &[f32]) -> f32;
 }
@@ -29,27 +41,22 @@ trait DetectorFactory: Send {
     fn create(&self, n_dims: usize) -> Box<dyn Detector>;
 }
 
-/// Erases the concrete detector type and wraps a factory closure for dynamic dispatch.
-struct FactoryDetector<D, F> {
-    /// Display name used in the output DataFrame.
-    name: &'static str,
-    /// Constructor called with dataset dimensionality.
-    factory: F,
+/// Erases the concrete detector type for dynamic dispatch.
+struct FactoryDetector<D> {
     /// Marker binding this factory to the detector type `D`.
     _detector: PhantomData<D>,
 }
 
-impl<D, F> DetectorFactory for FactoryDetector<D, F>
+impl<D> DetectorFactory for FactoryDetector<D>
 where
     D: Detector + 'static,
-    F: Fn(usize) -> D + Send + 'static,
 {
     fn name(&self) -> &'static str {
-        self.name
+        D::name()
     }
 
     fn create(&self, n_dims: usize) -> Box<dyn Detector> {
-        Box::new((self.factory)(n_dims))
+        Box::new(D::new(n_dims))
     }
 }
 
@@ -73,18 +80,15 @@ impl Touchstone {
         }
     }
 
-    /// Registers a detector factory.
+    /// Registers a detector type.
     ///
-    /// The factory receives the dataset dimensionality at runtime and should
-    /// return a fresh detector instance for that dimensionality.
-    pub fn add_detector<D, F>(&mut self, name: &'static str, factory: F)
+    /// The display name comes from `D::name()`. A fresh instance is built per
+    /// dataset via `D::new(n_dimensions)`.
+    pub fn add_detector<D>(&mut self)
     where
         D: Detector + 'static,
-        F: Fn(usize) -> D + Send + 'static,
     {
-        let detector_factory = FactoryDetector::<D, F> {
-            name,
-            factory,
+        let detector_factory = FactoryDetector::<D> {
             _detector: PhantomData,
         };
         self.detector_factories.push(Box::new(detector_factory));
@@ -176,7 +180,7 @@ impl Touchstone {
         let mut columns = Vec::with_capacity(2 + metric_names.len());
         columns.push(Column::new("dataset".into(), dataset_col));
         columns.push(Column::new("detector".into(), detector_col));
-        for (metric_name, values) in metric_names.iter().zip(metric_cols.into_iter()) {
+        for (metric_name, values) in metric_names.iter().zip(metric_cols) {
             columns.push(Column::new(metric_name.as_str().into(), values));
         }
 
@@ -223,4 +227,60 @@ fn run_dataset(
                 .collect()
         })
         .collect()
+}
+
+/// Command-line arguments shared by every algorithm binary.
+#[derive(Parser, Debug)]
+pub struct RunArgs {
+    /// Directory containing the Touchstone CSV datasets.
+    #[arg(long)]
+    pub data_dir: PathBuf,
+}
+
+/// Parses CLI args, runs a `Touchstone` evaluation for detector `D`, and prints
+/// the report. The display name is taken from `D::name()`.
+///
+/// Used by the [`touchstone_main!`] macro. Call directly if you need to register
+/// custom metrics before running.
+pub fn run_cli<D>() -> Result<()>
+where
+    D: Detector + 'static,
+{
+    let args = RunArgs::parse();
+    let mut experiment = Touchstone::new(&args.data_dir);
+    experiment.add_detector::<D>();
+    let mut report_df = experiment.run()?;
+
+    let mut file = File::create(format!("./touchstone-{}.csv", D::name())).unwrap();
+    CsvWriter::new(&mut file)
+        .include_header(true)
+        .with_separator(b',')
+        .finish(&mut report_df)
+        .unwrap();
+
+    Ok(())
+}
+
+/// Generates a `fn main` that runs the given `Detector`.
+///
+/// Usage in an algorithm crate's `src/main.rs`:
+///
+/// ```ignore
+/// use touchstone_rs::{Detector, touchstone_main};
+///
+/// struct MyDetector;
+/// impl Detector for MyDetector {
+///     fn name() -> &'static str { "MyDetector" }
+///     /* ... */
+/// }
+///
+/// touchstone_main!(MyDetector);
+/// ```
+#[macro_export]
+macro_rules! touchstone_main {
+    ($detector:ty) => {
+        fn main() -> $crate::Result<()> {
+            $crate::run_cli::<$detector>()
+        }
+    };
 }
