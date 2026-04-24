@@ -3,6 +3,7 @@ name: Revoke smoketest approval
 on:
   pull_request_target:
     types: [synchronize]
+    branches: [develop]
 
 jobs:
   revoke:

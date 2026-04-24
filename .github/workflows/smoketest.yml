@@ -3,6 +3,7 @@ name: Smoketest
 on:
   pull_request_target:
     types: [labeled]
+    branches: [develop]
 
 jobs:
   smoketest:
@@ -10,6 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: none
+      checks: none
+      deployments: none
+      id-token: none
+      issues: none
+      packages: none
+      pages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,5 +100,5 @@ jobs:
 
       - name: Run smoketest
         if: steps.check_files.outputs.only_algorithms == 'true'
-        run: env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
+        run: unshare --net env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
         timeout-minutes: 10

@@ -1,0 +1,22 @@
+name: Enforce base branch
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+jobs:
+  check-base:
+    if: github.event.pull_request.base.ref != 'develop'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Close PR and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "Thanks for your contribution! This repository only accepts pull requests targeting the \`develop\` branch. Please close this PR and re-open it with \`develop\` as the base branch."
+          gh pr close ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }}
