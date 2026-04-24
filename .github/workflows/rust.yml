@@ -96,7 +96,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token ${{ secrets.CRATES_TOKEN }}
+          args: --package touchstone-rs --token ${{ secrets.CRATES_TOKEN }}
 
   release:
     runs-on: ubuntu-latest
