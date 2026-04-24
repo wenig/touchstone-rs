@@ -41,5 +41,5 @@ jobs:
         run: ./scripts/build-detector.sh ${{ env.DETECTOR_NAME }}
 
       - name: Run smoketest
-        run: ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }}
+        run: ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
         timeout-minutes: 10

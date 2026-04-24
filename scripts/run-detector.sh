@@ -1,20 +1,19 @@
 #!/bin/bash
 set -e
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 <detector-name>"
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "Usage: $0 <detector-name> <data-dir>"
   exit 1
 fi
 
 DETECTOR="$1"
-DATA_DIR="tests/fixtures/smoketest"
+DATA_DIR="$2"
 
 if [ ! -d "$DATA_DIR" ]; then
   echo "Error: test data directory not found: $DATA_DIR"
   exit 1
 fi
 
-echo "Running $DETECTOR with 2-minute timeout..."
-timeout 120 cargo run -p "$DETECTOR" --release -- --data-dir "$DATA_DIR"
+cargo run -p "$DETECTOR" --release -- --data-dir "$DATA_DIR"
 
-echo "✓ Smoketest passed"
+echo "✓ run finished"

@@ -12,7 +12,7 @@ keywords = ["anomaly-detection", "benchmarking", "time-series", "streaming"]
 categories = ["algorithms", "development-tools::testing"]
 
 [dependencies]
-polars = { version = "0.53", features = ["csv", "lazy"] }
+polars = { version = "0.53", features = ["csv", "lazy", "parquet"] }
 anyhow = "1"
 indicatif = "0.18"
 clap = { version = "4", features = ["derive"] }

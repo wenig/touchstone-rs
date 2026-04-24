@@ -12,7 +12,7 @@
 
 Touchstone-rs is a Rust library for evaluating streaming anomaly detectors on labeled time-series benchmark datasets. Point it at a directory of CSVs, register one or more detectors, call `run()`, and get back a [Polars](https://pola.rs/) DataFrame with one row per `(dataset, detector)` pair.
 
-Touchstone-rs is made in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\] — a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
+Touchstone-rs is made in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\], a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
 
 ## Quickstart
 
@@ -65,7 +65,7 @@ impl Detector for MyDetector {
 fn main() {
     let mut experiment = Touchstone::new(Path::new("data"));
 
-    // `new(n_dimensions)` receives the dataset's feature count at runtime —
+    // `new(n_dimensions)` receives the dataset's feature count at runtime,
     // use it to size internal buffers to match.
     experiment.add_detector::<MyDetector>();
 
@@ -143,11 +143,17 @@ timestamp, feature_1, ..., feature_N, label
 2016-04-20 10:35:13, 5.6, 7.8, 1
 ```
 
-- **Column 1**: timestamp — parsed but ignored
-- **Columns 2 … N**: features — cast to `f32`, passed as `point` to `update()`
-- **Last column**: binary anomaly label — `0` (normal) or `1` (anomaly)
+- **Column 1**: timestamp | parsed but ignored
+- **Columns 2 … N**: features | cast to `f32`, passed as `point` to `update()`
+- **Last column**: binary anomaly label | `0` (normal) or `1` (anomaly)
 
 Touchstone-rs passes every row to `update()` in order, simulating a streaming environment. Each detector gets a fresh instance per dataset.
+
+## Benchmark Dataset Selection Methodology
+
+To ensure efficient and representative evaluation, we employ a data-driven approach to select a diverse subset of datasets from the TimeEval collection. Starting from 976 unique benchmark datasets spanning 16 different data sources, we extract feature vectors representing each dataset's performance profile across all 60 algorithms. These vectors capture five key metrics: ROC-AUC, PR-AUC, Range PR-AUC, Average Precision, and execution time. We then apply k-medoids clustering independently on univariate (902 datasets) and multivariate (74 datasets) subsets with k=10 for each, selecting the medoid dataset from each cluster as a representative. After filtering for public availability, we obtain 19 representative datasets (10 univariate + 9 multivariate from 6 distinct collections). This approach ensures two critical properties: (1) **diversity**, each selected dataset represents a distinct performance pattern, preventing redundant evaluation of algorithmically similar benchmarks, and (2) **representation**, we maintain balanced coverage of both univariate and multivariate time series despite class imbalance in the full collection. We additionally include the CoMuT synthetic dataset, which is purpose-designed to evaluate correlation anomalies (anomalies invisible in individual channels but visible only through multivariate relationships) complementing TimeEval's focus on point and subsequence anomalies. The resulting 20-dataset benchmark reduces computational cost by 98% while covering both standard detection patterns and correlation-based detection, enabling fast iteration during development while maintaining statistical robustness for final validation.
+
+See [`DATASETS.md`](DATASETS.md) for the complete list of benchmark datasets and their sources.
 
 ## Running the Built-in Example
 
@@ -159,7 +165,7 @@ This runs a rolling z-score detector (window = 20) against all datasets in `data
 
 ## Contributing an Algorithm
 
-Touchstone-rs accepts new streaming anomaly detectors via pull request — each one lives as its own crate under `algorithms/` and is picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork → add crate → implement `Detector` → open PR) and how CI validates submissions.
+Touchstone-rs accepts new streaming anomaly detectors via pull request, each one living as its own crate under `algorithms/` and picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork → add crate → implement `Detector` → open PR) and how CI validates submissions.
 
 ## References
 
