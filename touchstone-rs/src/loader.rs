@@ -49,10 +49,7 @@ pub fn list_datasets(dir: &Path) -> Result<Vec<(String, std::path::PathBuf)>> {
     let mut result: Vec<_> = seen.into_iter().collect();
     result.sort_by(|a, b| a.1.cmp(&b.1));
 
-    Ok(result
-        .into_iter()
-        .map(|(name, path)| (name, path))
-        .collect())
+    Ok(result)
 }
 
 /// Loads a dataset from a Parquet or CSV file, applying the given name to the result.
@@ -72,9 +69,7 @@ pub fn load_dataset(name: String, path: &Path) -> Result<Dataset> {
 /// Expects format: `timestamp, feature_1, ..., feature_n, label`
 fn load_parquet(path: &Path) -> Result<Dataset> {
     let file = File::open(path).context("open parquet file")?;
-    let df = ParquetReader::new(file)
-        .finish()
-        .context("parquet parse")?;
+    let df = ParquetReader::new(file).finish().context("parquet parse")?;
 
     extract_dataset(df)
 }

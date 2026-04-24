@@ -14,7 +14,9 @@ impl Detector for BaselineDetector {
     }
 
     fn new(_n_dimensions: usize) -> Self {
-        Self { rng: rand::make_rng() }
+        Self {
+            rng: rand::make_rng(),
+        }
     }
 
     fn update(&mut self, _point: &[f32]) -> f32 {
