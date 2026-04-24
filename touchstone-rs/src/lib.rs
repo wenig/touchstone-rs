@@ -34,9 +34,9 @@ pub trait Detector: Send {
 }
 
 /// Factory for creating fresh detector instances with a specific dimensionality.
-trait DetectorFactory: Send {
+pub trait DetectorFactory: Send {
     /// Returns the display name of this detector.
-    fn name(&self) -> &'static str;
+    fn name(&self) -> String;
     /// Creates a new detector instance configured for the given dimensionality.
     fn create(&self, n_dims: usize) -> Box<dyn Detector>;
 }
@@ -51,8 +51,8 @@ impl<D> DetectorFactory for FactoryDetector<D>
 where
     D: Detector + 'static,
 {
-    fn name(&self) -> &'static str {
-        D::name()
+    fn name(&self) -> String {
+        D::name().to_string()
     }
 
     fn create(&self, n_dims: usize) -> Box<dyn Detector> {
@@ -94,6 +94,13 @@ impl Touchstone {
         self.detector_factories.push(Box::new(detector_factory));
     }
 
+    /// Registers a dynamic detector factory.
+    ///
+    /// Use this when the detector type is not known at compile time (e.g. Python detectors).
+    pub fn add_detector_factory(&mut self, factory: Box<dyn DetectorFactory>) {
+        self.detector_factories.push(factory);
+    }
+
     /// Adds a custom metric used for scoring.
     ///
     /// If no metrics are added, the default metric set is used.
@@ -122,7 +129,7 @@ impl Touchstone {
             .map(|m| m.name().to_string())
             .chain(["time_sec".to_string()])
             .collect();
-        let detector_names: Vec<&'static str> =
+        let detector_names: Vec<String> =
             self.detector_factories.iter().map(|d| d.name()).collect();
         let mut dataset_col: Vec<String> = Vec::new();
         let mut detector_col: Vec<String> = Vec::new();
@@ -147,7 +154,7 @@ impl Touchstone {
                     pb.inc(self.detector_factories.len() as u64);
                     for det_name in &detector_names {
                         dataset_col.push(dataset_name.clone());
-                        detector_col.push((*det_name).to_string());
+                        detector_col.push(det_name.clone());
                         for metric_values in &mut metric_cols {
                             metric_values.push(f64::NAN);
                         }
@@ -167,7 +174,7 @@ impl Touchstone {
             pb.inc(self.detector_factories.len() as u64);
             for (det_name, det_scores) in detector_names.iter().zip(ds_results.iter()) {
                 dataset_col.push(dataset.name.clone());
-                detector_col.push((*det_name).to_string());
+                detector_col.push(det_name.clone());
                 for (mi, value) in det_scores.iter().enumerate() {
                     metric_cols[mi].push(*value);
                 }
