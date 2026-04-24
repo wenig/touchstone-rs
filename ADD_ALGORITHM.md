@@ -1,8 +1,8 @@
 # Contributing an Algorithm
 
-Touchstone-rs is designed as a shared benchmark: researchers contribute streaming anomaly detectors by opening a pull request that adds a new crate under `algorithms/`. Once merged, CI runs the benchmark against every registered algorithm so results are reproducible and directly comparable across submissions.
+Touchstone-rs is designed as a shared benchmark where researchers contribute streaming anomaly detectors by opening a pull request that adds a new crate under `algorithms/`. Once merged, CI runs the benchmark against every registered algorithm so results are reproducible and directly comparable across submissions.
 
-This guide walks through the contribution workflow. You only need to implement the `Detector` trait — evaluation, CLI parsing, and reporting are handled by `touchstone-rs` via the `touchstone_main!` macro. You never write a `main` function yourself.
+This guide walks through the contribution workflow. You only need to implement the `Detector` trait, as evaluation, CLI parsing, and reporting are all handled by `touchstone-rs` via the `touchstone_main!` macro. You never write a `main` function yourself.
 
 ## 1. Fork and clone
 
@@ -77,7 +77,7 @@ cargo run -p my_detector -- --data-dir data
 
 ## 6. Open a pull request
 
-Push your branch to your fork and open a PR against `main`. CI runs a **smoke test** on the PR that builds your crate and verifies its runtime stays within the limits of the GitHub-hosted runner — if your detector is too slow on the smoke dataset, the PR is blocked.
+Push your branch to your fork and open a PR against `develop`. CI runs a **smoke test** on the PR that builds your crate and verifies its runtime stays within the limits of the GitHub-hosted runner. If your detector is too slow on the smoke dataset, the PR is blocked.
 
 The full benchmark and the updated comparison table are produced only **after merge**, so benchmark results are always pinned to code that has passed review.
 
