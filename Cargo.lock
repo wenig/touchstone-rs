@@ -3068,6 +3068,7 @@ dependencies = [
  "clap",
  "indicatif",
  "polars",
+ "rayon",
  "tempfile",
 ]
 

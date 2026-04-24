@@ -2,6 +2,8 @@
 ///
 /// Average the range-PR-AUC (or ROC-AUC with dilation) over buffer sizes
 /// 0 through `max_buffer`, producing a single robustness-aware score.
+use rayon::prelude::*;
+
 use super::{
     Metric,
     range::{Bias, Cardinality, range_pr_auc_impl},
@@ -53,16 +55,14 @@ impl Metric for RangePrVus {
     }
 
     fn score(&self, labels: &[u8], scores: &[f32]) -> f64 {
+        let cardinality = self.cardinality;
+        let bias = self.bias;
+        let max_samples = self.max_samples;
         let values: Vec<f64> = (0..=self.max_buffer)
+            .into_par_iter()
             .map(|buf| {
                 let dilated = super::roc_auc::dilate(labels, buf);
-                range_pr_auc_impl(
-                    &dilated,
-                    scores,
-                    self.cardinality,
-                    self.bias,
-                    self.max_samples,
-                )
+                range_pr_auc_impl(&dilated, scores, cardinality, bias, max_samples)
             })
             .filter(|v| v.is_finite())
             .collect();
@@ -80,6 +80,7 @@ impl Metric for RangeRocVus {
 
     fn score(&self, labels: &[u8], scores: &[f32]) -> f64 {
         let values: Vec<f64> = (0..=self.max_buffer)
+            .into_par_iter()
             .map(|buf| roc_auc_buffered(labels, scores, buf))
             .filter(|v| v.is_finite())
             .collect();
