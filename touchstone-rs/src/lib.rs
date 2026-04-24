@@ -1,4 +1,9 @@
-#![doc = include_str!("../../README.md")]
+//! Touchstone — a streaming anomaly-detection benchmark framework.
+//!
+//! Implement the [`Detector`] trait, register it with [`Touchstone`], and call
+//! [`Touchstone::run`] to evaluate it against a directory of CSV datasets.
+//! Results are returned as a [`polars::prelude::DataFrame`] with one row per
+//! `dataset × detector` and one column per metric.
 
 pub mod loader;
 pub mod metrics;
