@@ -30,6 +30,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - uses: astral-sh/setup-uv@v5
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -64,8 +66,22 @@ jobs:
         if: steps.check_files.outputs.only_algorithms == 'true'
         run: echo "DETECTOR_NAME=$(./scripts/extract-detector-name.sh)" >> $GITHUB_ENV
 
-      - name: Check touchstone_main! entrypoint
+      - name: Detect detector type
         if: steps.check_files.outputs.only_algorithms == 'true'
+        id: detect_type
+        run: |
+          DIR="algorithms/${{ env.DETECTOR_NAME }}"
+          if [ -f "$DIR/Cargo.toml" ]; then
+            echo "type=rust" >> $GITHUB_OUTPUT
+          elif [ -f "$DIR/pyproject.toml" ]; then
+            echo "type=python" >> $GITHUB_OUTPUT
+          else
+            echo "Error: $DIR contains neither Cargo.toml nor pyproject.toml"
+            exit 1
+          fi
+
+      - name: Check touchstone_main! entrypoint (Rust)
+        if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'rust'
         run: |
           DIR=algorithms/${{ env.DETECTOR_NAME }}
           MAIN=$DIR/src/main.rs
@@ -94,11 +110,39 @@ jobs:
             exit 1
           fi
 
+      - name: Check run_cli entrypoint (Python)
+        if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'python'
+        run: |
+          DIR=algorithms/${{ env.DETECTOR_NAME }}
+          SCRIPT=$DIR/detector.py
+
+          if [ ! -f "$SCRIPT" ]; then
+            echo "Error: $SCRIPT not found — Python detectors must have a detector.py"
+            exit 1
+          fi
+
+          # Must call run_cli(...) in the __main__ block
+          if ! grep -qE 'run_cli\s*\(' "$SCRIPT"; then
+            echo "Error: $SCRIPT must call run_cli(DetectorClass)"
+            exit 1
+          fi
+
+          # Must declare touchstone-py as a dependency
+          if ! grep -q 'touchstone-py' "$DIR/pyproject.toml"; then
+            echo "Error: $DIR/pyproject.toml must list touchstone-py as a dependency"
+            exit 1
+          fi
+
       - name: Build detector
         if: steps.check_files.outputs.only_algorithms == 'true'
         run: ./scripts/build-detector.sh ${{ env.DETECTOR_NAME }}
 
-      - name: Run smoketest
-        if: steps.check_files.outputs.only_algorithms == 'true'
+      - name: Run smoketest (Rust)
+        if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'rust'
         run: unshare --net env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
+        timeout-minutes: 10
+
+      - name: Run smoketest (Python)
+        if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'python'
+        run: ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
         timeout-minutes: 10

@@ -7,8 +7,17 @@ if [ -z "$1" ]; then
 fi
 
 DETECTOR="$1"
+DIR="algorithms/$DETECTOR"
 
-echo "Building $DETECTOR in release mode..."
-cargo build -p "$DETECTOR" --release
-
-echo "✓ Build successful"
+if [ -f "$DIR/Cargo.toml" ]; then
+  echo "Building $DETECTOR (Rust) in release mode..."
+  cargo build -p "$DETECTOR" --release
+  echo "✓ Build successful"
+elif [ -f "$DIR/pyproject.toml" ]; then
+  echo "Installing $DETECTOR (Python) dependencies..."
+  uv sync --project "$DIR"
+  echo "✓ Dependencies installed"
+else
+  echo "Error: $DIR contains neither Cargo.toml nor pyproject.toml"
+  exit 1
+fi
