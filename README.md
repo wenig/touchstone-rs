@@ -2,6 +2,7 @@
   <img src="banner.png" />
 </p>
 
+[![Live Leaderboard](https://img.shields.io/badge/Live%20Leaderboard-View%20Rankings-%23f97316?logo=github)](https://wenig.github.io/touchstone-rs)
 [![crates.io](https://img.shields.io/crates/v/touchstone-rs?label=latest)](https://crates.io/crates/touchstone-rs)
 ![Tests on main](https://github.com/wenig/touchstone-rs/workflows/Rust/badge.svg)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -10,9 +11,13 @@
 
 # Touchstone-rs
 
-Touchstone-rs is a Rust library for evaluating streaming anomaly detectors on labeled time-series benchmark datasets. Point it at a directory of CSVs, register one or more detectors, call `run()`, and get back a [Polars](https://pola.rs/) DataFrame with one row per `(dataset, detector)` pair.
+> **The live leaderboard at [wenig.github.io/touchstone-rs](https://wenig.github.io/touchstone-rs) ranks every contributed algorithm across all 20 benchmark datasets, updated automatically on every merge.** Submit a pull request and your detector appears on the board.
 
-Touchstone-rs is made in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\], a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
+Benchmarking streaming anomaly detectors is tedious: loading dozens of CSV files, wiring up metrics, normalizing scores, and collecting results into a comparable table all take time away from the detector itself. Touchstone-rs handles that scaffolding so you can focus on the algorithm.
+
+Point it at a directory of CSVs, register one or more detectors, call `run()`, and get back a [Polars](https://pola.rs/) DataFrame with one row per `(dataset, detector)` pair covering 14 standard metrics.
+
+Touchstone-rs is designed in the spirit of [TimeEval](https://github.com/TimeEval/TimeEval) \[2\], a Python benchmarking toolkit for time series anomaly detection algorithms. If you are looking for ready-made datasets, the TimeEval evaluation paper \[1\] provides a large collection already formatted for direct use with Touchstone-rs at the [TimeEval Datasets page](https://timeeval.github.io/evaluation-paper/notebooks/Datasets.html).
 
 ## Quickstart
 
@@ -25,7 +30,7 @@ touchstone-rs = "0.1"
 
 ## Implementing the `Detector` Trait
 
-Your algorithm must implement a single trait:
+Every algorithm plugs in through a single trait:
 
 ```rust
 pub trait Detector: Send {
@@ -116,7 +121,7 @@ experiment.add_metric(RocAuc);
 experiment.add_metric(F1Score::new(SigmaThreshold(3.0)));
 ```
 
-Implement `Metric` for fully custom scoring:
+You can also implement `Metric` directly for fully custom scoring:
 
 ```rust
 use touchstone_rs::metrics::Metric;
@@ -144,14 +149,20 @@ timestamp, feature_1, ..., feature_N, label
 ```
 
 - **Column 1**: timestamp | parsed but ignored
-- **Columns 2 … N**: features | cast to `f32`, passed as `point` to `update()`
+- **Columns 2 ... N**: features | cast to `f32`, passed as `point` to `update()`
 - **Last column**: binary anomaly label | `0` (normal) or `1` (anomaly)
 
 Touchstone-rs passes every row to `update()` in order, simulating a streaming environment. Each detector gets a fresh instance per dataset.
 
-## Benchmark Dataset Selection Methodology
+## Benchmark Dataset Selection
 
-To ensure efficient and representative evaluation, we employ a data-driven approach to select a diverse subset of datasets from the TimeEval collection. Starting from 976 unique benchmark datasets spanning 16 different data sources, we extract feature vectors representing each dataset's performance profile across all 60 algorithms. These vectors capture five key metrics: ROC-AUC, PR-AUC, Range PR-AUC, Average Precision, and execution time. We then apply k-medoids clustering independently on univariate (902 datasets) and multivariate (74 datasets) subsets with k=10 for each, selecting the medoid dataset from each cluster as a representative. After filtering for public availability, we obtain 19 representative datasets (10 univariate + 9 multivariate from 6 distinct collections). This approach ensures two critical properties: (1) **diversity**, each selected dataset represents a distinct performance pattern, preventing redundant evaluation of algorithmically similar benchmarks, and (2) **representation**, we maintain balanced coverage of both univariate and multivariate time series despite class imbalance in the full collection. We additionally include the CoMuT synthetic dataset, which is purpose-designed to evaluate correlation anomalies (anomalies invisible in individual channels but visible only through multivariate relationships) complementing TimeEval's focus on point and subsequence anomalies. The resulting 20-dataset benchmark reduces computational cost by 98% while covering both standard detection patterns and correlation-based detection, enabling fast iteration during development while maintaining statistical robustness for final validation.
+Evaluating against all 976 TimeEval datasets is expensive and often redundant: many datasets exercise the same failure modes. To address this, we use a data-driven selection procedure to pick a diverse, representative subset.
+
+We extract a feature vector for each dataset describing its performance profile across all 60 algorithms, covering five metrics: ROC-AUC, PR-AUC, Range PR-AUC, Average Precision, and execution time. We then cluster the univariate (902 datasets) and multivariate (74 datasets) subsets independently using k-medoids with k=10 for each, and select the medoid from each cluster as the representative. After filtering for public availability, this yields 19 datasets (10 univariate, 9 multivariate from 6 distinct collections).
+
+The selection provides two key guarantees. First, **diversity**: each chosen dataset represents a distinct performance pattern, avoiding redundant evaluation on algorithmically similar benchmarks. Second, **balance**: both univariate and multivariate time series are covered proportionally despite the class imbalance in the full collection.
+
+We additionally include the CoMuT synthetic dataset, which is purpose-designed to surface correlation anomalies, that is, anomalies invisible in individual channels but visible only through multivariate relationships. This complements TimeEval's focus on point and subsequence anomalies. The resulting 20-dataset benchmark reduces computational cost by 98% while covering both standard detection patterns and correlation-based detection, enabling fast iteration during development while maintaining statistical robustness for final validation.
 
 See [`DATASETS.md`](DATASETS.md) for the complete list of benchmark datasets and their sources.
 
@@ -165,7 +176,7 @@ This runs a rolling z-score detector (window = 20) against all datasets in `data
 
 ## Contributing an Algorithm
 
-Touchstone-rs accepts new streaming anomaly detectors via pull request, each one living as its own crate under `algorithms/` and picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork → add crate → implement `Detector` → open PR) and how CI validates submissions.
+Touchstone-rs accepts new streaming anomaly detectors via pull request, each one living as its own crate under `algorithms/` and picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork, add crate, implement `Detector`, open PR) and how CI validates submissions.
 
 ## References
 

@@ -47,10 +47,70 @@ cargo doc --open
 
 200+ CSV benchmark files live in `data/`. Each file: `timestamp, features..., is_anomaly`. The loader skips the timestamp, casts features to f32, and treats the last column as binary labels.
 
-## Adding a Detector
+## Adding a Detector (library API)
 
 See `examples/normal_distribution_detector.rs` for a complete example. Implement `Detector`, then:
 
 ```rust
 touchstone.add_detector("my_detector", || MyDetector::new());
 ```
+
+## Adding an Algorithm Crate (contribution workflow)
+
+Each contributed algorithm lives as a standalone binary crate under `algorithms/`. The workspace root `Cargo.toml` globs `algorithms/*`, so no workspace edit is ever needed.
+
+**Step 1: create the crate**
+
+```sh
+mkdir algorithms/my_detector
+cd algorithms/my_detector
+cargo init --bin --name my_detector
+```
+
+**Step 2: add dependencies**
+
+From inside `algorithms/my_detector/`:
+
+```sh
+cargo add --path ../../touchstone-rs
+# add any other crates the detector needs, e.g. ndarray, rand
+```
+
+**Step 3: implement `src/main.rs`**
+
+Replace the generated `main.rs` with a `Detector` impl and the `touchstone_main!` invocation. Do not write a `main` function yourself; the macro provides one.
+
+```rust
+use touchstone_rs::{Detector, touchstone_main};
+
+pub struct MyDetector { n_dimensions: usize }
+
+impl Detector for MyDetector {
+    fn name() -> &'static str { "MyDetector" }
+    fn new(n_dimensions: usize) -> Self { Self { n_dimensions } }
+    fn update(&mut self, point: &[f32]) -> f32 {
+        // return anomaly score; NaN during warmup is fine
+        0.0
+    }
+}
+
+touchstone_main!(MyDetector);
+```
+
+`name()` is the display name in the results DataFrame and leaderboard. `n_dimensions` reflects the dataset's feature count and is provided at runtime; use it to size internal buffers.
+
+**Step 4: verify locally**
+
+From the workspace root:
+
+```sh
+cargo run -p my_detector -- --data-dir data
+```
+
+This writes `touchstone-MyDetector.csv` with one row per dataset covering all metrics plus `time_sec`.
+
+**Step 5: open a pull request**
+
+Open a PR against `develop`. CI runs a smoke test that builds the crate and checks runtime against the GitHub-hosted runner limits. The full benchmark runs only after merge, so leaderboard results are always tied to reviewed code.
+
+Use `algorithms/baseline/` as a minimal reference implementation.
