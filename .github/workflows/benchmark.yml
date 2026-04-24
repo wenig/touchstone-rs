@@ -1,0 +1,76 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'algorithms/**'
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Detect algorithm
+        id: detect
+        run: |
+          DETECTORS=$(git diff HEAD^ HEAD --name-only | grep -o '^algorithms/[^/]*' | sort -u | sed 's|algorithms/||')
+          COUNT=$(echo "$DETECTORS" | grep -c . || true)
+          if [ "$COUNT" -ne 1 ]; then
+            echo "Expected exactly 1 algorithm change, got $COUNT — skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "name=$DETECTORS" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Build detector
+        if: steps.detect.outputs.skip != 'true'
+        run: ./scripts/build-detector.sh ${{ steps.detect.outputs.name }}
+
+      - name: Install Python dependencies
+        if: steps.detect.outputs.skip != 'true'
+        run: pip install polars jinja2
+
+      - name: Run detector
+        if: steps.detect.outputs.skip != 'true'
+        run: ./scripts/run-detector.sh ${{ steps.detect.outputs.name }} benchmark
+
+      - name: Update leaderboard
+        if: steps.detect.outputs.skip != 'true'
+        run: python3 scripts/update-leaderboard.py
+
+      - name: Deploy to GitHub Pages
+        if: steps.detect.outputs.skip != 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./leaderboard/dist
+          keep_files: true
