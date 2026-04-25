@@ -9,6 +9,7 @@ on:
     branches: [main, develop]
     paths:
       - "touchstone-py/**"
+  workflow_dispatch:
 
 jobs:
   test:
@@ -49,6 +50,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
       - uses: PyO3/maturin-action@v1
         with:
           working-directory: touchstone-py
