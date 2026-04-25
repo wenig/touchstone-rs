@@ -46,7 +46,15 @@ jobs:
     if: github.ref_name == 'main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            manylinux: auto
+          - os: macos-latest
+            manylinux: "off"
+          - os: macos-13
+            manylinux: "off"
+          - os: windows-latest
+            manylinux: "off"
 
     steps:
       - uses: actions/checkout@v4
@@ -57,11 +65,11 @@ jobs:
         with:
           working-directory: touchstone-py
           command: build
-          args: --release --out dist ${{ matrix.os == 'ubuntu-latest' && '--interpreter 3.11 3.12 3.13' || '' }}
-          manylinux: auto
+          args: --release --out dist --interpreter 3.11 3.12 3.13
+          manylinux: ${{ matrix.manylinux }}
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.os }}-${{ matrix.manylinux }}
           path: touchstone-py/dist
 
   publish:
@@ -80,3 +88,4 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          skip-existing: true
