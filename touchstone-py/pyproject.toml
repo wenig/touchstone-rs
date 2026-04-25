@@ -1,0 +1,22 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "touchstone-py"
+version = "0.1.0"
+description = "A Rust library for benchmarking streaming anomaly detectors against labeled time-series datasets"
+readme = "../README.md"
+authors = [
+    { name = "Phillip Wenig", email = "phillip.wenig@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = ["polars>=0.53"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.maturin]
+module-name = "touchstone_py._rust_backend"
+profile = "release"
+bindings = "pyo3"

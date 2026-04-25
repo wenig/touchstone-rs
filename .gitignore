@@ -1,3 +1,8 @@
 data/
 .claude
 target
+*.so
+.venv
+.pytest_cache
+__pycache__
+uv.lock

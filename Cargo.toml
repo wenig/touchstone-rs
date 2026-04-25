@@ -4,3 +4,4 @@ members = [
   "touchstone-rs",
   "algorithms/*",
 ]
+exclude = ["touchstone-py"]
