@@ -154,6 +154,78 @@ timestamp, feature_1, ..., feature_N, label
 
 Touchstone-rs passes every row to `update()` in order, simulating a streaming environment. Each detector gets a fresh instance per dataset.
 
+## Python Bindings (touchstone-py)
+
+`touchstone-py` exposes the same benchmarking engine as a Python package via [PyO3](https://pyo3.rs/), returning results as a [Polars](https://pola.rs/) DataFrame.
+
+### Installation
+
+```sh
+pip install touchstone-py
+```
+
+Or build from source (requires [maturin](https://github.com/PyO3/maturin) and Rust):
+
+```sh
+cd touchstone-py
+pip install maturin
+maturin develop --release
+```
+
+### Implementing a Detector
+
+Subclass `Detector` and implement three members:
+
+```python
+from touchstone_py import Detector
+
+class MyDetector(Detector):
+    @classmethod
+    def name(cls) -> str:
+        return "MyDetector-v1"
+
+    def __init__(self, n_dimensions: int) -> None:
+        # called once per dataset; size internal state to n_dimensions
+        self.n_dimensions = n_dimensions
+
+    def update(self, point: list[float]) -> float:
+        # called once per data point in arrival order
+        # return a higher score for more anomalous points
+        # return float('nan') during warm-up — NaN scores are excluded from metrics
+        return 0.5
+```
+
+- `name()` — display name shown in the results DataFrame.
+- `__init__(n_dimensions)` — receives the dataset's feature count; called once per dataset.
+- `update(point)` — receives the current feature vector; return an anomaly score (`float`). Scores are minmax-normalized to `[0, 1]` before metrics are computed, so absolute scale does not matter.
+
+### Running an Evaluation
+
+```python
+from pathlib import Path
+from touchstone_py import run_touchstone, Detector
+
+class MyDetector(Detector):
+    @classmethod
+    def name(cls) -> str:
+        return "MyDetector-v1"
+
+    def __init__(self, n_dimensions: int) -> None:
+        self.window: list[float] = []
+
+    def update(self, point: list[float]) -> float:
+        self.window.append(point[0])
+        if len(self.window) < 20:
+            return float("nan")
+        mean = sum(self.window) / len(self.window)
+        return abs(point[0] - mean)
+
+df = run_touchstone(Path("data"), [MyDetector])
+print(df)
+```
+
+`run_touchstone` accepts a directory of CSV datasets and a list of detector *classes* (not instances). It returns a Polars DataFrame with the same schema as the Rust API — one row per `(dataset, detector)` pair with all 14 metrics plus `time_sec`.
+
 ## Benchmark Dataset Selection
 
 Evaluating against all 976 TimeEval datasets is expensive and often redundant: many datasets exercise the same failure modes. To address this, we use a data-driven selection procedure to pick a diverse, representative subset.

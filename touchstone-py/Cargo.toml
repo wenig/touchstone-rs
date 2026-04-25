@@ -1,0 +1,12 @@
+[package]
+name = "touchstone-py"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.28.3"
+polars = { version = "0.53", default-features = false, features = ["ipc"] }
+touchstone-rs = "0.2"

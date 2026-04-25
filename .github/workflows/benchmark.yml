@@ -20,6 +20,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - uses: astral-sh/setup-uv@v5
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -50,6 +52,20 @@ jobs:
           fi
           echo "name=$DETECTORS" >> $GITHUB_OUTPUT
           echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Detect detector type
+        if: steps.detect.outputs.skip != 'true'
+        id: detect_type
+        run: |
+          DIR="algorithms/${{ steps.detect.outputs.name }}"
+          if [ -f "$DIR/Cargo.toml" ]; then
+            echo "type=rust" >> $GITHUB_OUTPUT
+          elif [ -f "$DIR/pyproject.toml" ]; then
+            echo "type=python" >> $GITHUB_OUTPUT
+          else
+            echo "Error: $DIR contains neither Cargo.toml nor pyproject.toml"
+            exit 1
+          fi
 
       - name: Build detector
         if: steps.detect.outputs.skip != 'true'

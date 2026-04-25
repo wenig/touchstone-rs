@@ -10,6 +10,7 @@ homepage = "https://github.com/wenig/touchstone-rs"
 documentation = "https://docs.rs/touchstone-rs"
 keywords = ["anomaly-detection", "benchmarking", "time-series", "streaming"]
 categories = ["algorithms", "development-tools::testing"]
+readme = "../README.md"
 
 [dependencies]
 polars = { version = "0.53", features = ["csv", "lazy", "parquet"] }
