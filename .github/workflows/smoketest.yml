@@ -139,7 +139,7 @@ jobs:
 
       - name: Run smoketest (Rust)
         if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'rust'
-        run: env -i HOME=/root PATH=/home/runner/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
+        run: env -i HOME=/home/runner PATH=/home/runner/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
         timeout-minutes: 10
 
       - name: Run smoketest (Python)
