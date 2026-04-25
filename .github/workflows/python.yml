@@ -51,8 +51,6 @@ jobs:
             manylinux: auto
           - os: macos-latest
             manylinux: "off"
-          - os: macos-13
-            manylinux: "off"
           - os: windows-latest
             manylinux: "off"
 
