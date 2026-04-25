@@ -53,7 +53,7 @@ jobs:
       - name: Check only algorithms changed
         id: check_files
         run: |
-          NON_ALGO=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -v '^algorithms/')
+          NON_ALGO=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -v '^algorithms/' | grep -v '^Cargo.lock$')
           if [ -z "$NON_ALGO" ]; then
             echo "only_algorithms=true" >> $GITHUB_OUTPUT
           else
