@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 rand = "0.10.1"
-touchstone-rs = { path = "../../touchstone-rs"}
+touchstone-rs = { path = "../../../touchstone-rs"}

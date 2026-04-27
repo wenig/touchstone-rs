@@ -2,8 +2,8 @@
 
 Touchstone accepts streaming anomaly detectors written in **Rust** or **Python**. Both paths produce an identical CSV results file and appear on the same leaderboard. Pick the language that suits your detector.
 
-- [Rust](#rust) — zero-overhead, ships as a workspace crate under `algorithms/`
-- [Python](#python) — uses `touchstone-py`, ships as a directory under `algorithms/`
+- [Rust](#rust) — zero-overhead, ships as a workspace crate under `algorithms/rust/`
+- [Python](#python) — uses `touchstone-py`, ships as a directory under `algorithms/python/`
 
 ---
 
@@ -26,16 +26,16 @@ git checkout -b add-my-detector
 ## 2. Create and initialize the crate
 
 ```sh
-mkdir algorithms/my_detector
-cd algorithms/my_detector
+mkdir algorithms/rust/my_detector
+cd algorithms/rust/my_detector
 cargo init --bin --name my_detector
 ```
 
-The workspace root (`Cargo.toml`) already globs `algorithms/*`, so the new crate is picked up automatically — no workspace edit needed.
+The workspace root (`Cargo.toml`) already globs `algorithms/rust/*`, so the new crate is picked up automatically — no workspace edit needed.
 
 ## 3. Add the `touchstone-rs` dependency
 
-From inside `algorithms/my_detector/`:
+From inside `algorithms/rust/my_detector/`:
 
 ```sh
 cargo add --path ../../touchstone-rs
@@ -92,13 +92,13 @@ The full benchmark and the updated comparison table are produced only **after me
 
 ## Reference: `baseline`
 
-`algorithms/baseline/` is a minimal working example — a random-score detector — useful as a starting template.
+`algorithms/rust/baseline/` is a minimal working example — a random-score detector — useful as a starting template.
 
 ---
 
 ## Python
 
-Python detectors live under `algorithms/` as a directory containing a `pyproject.toml` and a detector script. The contribution workflow is the same as for Rust — fork, implement, test locally, open a PR.
+Python detectors live under `algorithms/python/` as a directory containing a `pyproject.toml` and a detector script. The contribution workflow is the same as for Rust — fork, implement, test locally, open a PR.
 
 ### 1. Fork and clone
 
@@ -111,12 +111,12 @@ git checkout -b add-my-detector
 ### 2. Create the detector directory
 
 ```sh
-mkdir algorithms/my_detector
+mkdir algorithms/python/my_detector
 ```
 
 ### 3. Declare dependencies in `pyproject.toml`
 
-Create `algorithms/my_detector/pyproject.toml`. List `touchstone-py` and any additional libraries your detector needs:
+Create `algorithms/python/my_detector/pyproject.toml`. List `touchstone-py` and any additional libraries your detector needs:
 
 ```toml
 [project]
@@ -131,7 +131,7 @@ dependencies = [
 
 ### 4. Implement the detector
 
-Create `algorithms/my_detector/detector.py`:
+Create `algorithms/python/my_detector/detector.py`:
 
 ```python
 from touchstone_py import Detector, run_cli
@@ -161,11 +161,11 @@ if __name__ == "__main__":
 [`uv`](https://docs.astral.sh/uv/) reads `pyproject.toml` and installs dependencies automatically:
 
 ```sh
-uv run --project algorithms/my_detector python algorithms/my_detector/detector.py --data-dir data
+uv run --project algorithms/python/my_detector python algorithms/python/my_detector/detector.py --data-dir data
 ```
 
 The run generates `touchstone-MyDetector.csv` containing one row per dataset with all metrics plus `time_sec`.
 
 ### 6. Open a pull request
 
-Push your branch to your fork and open a PR against `develop`. CI discovers Python detector directories by looking for `algorithms/*/pyproject.toml`, runs a smoke test with `uv run` on a small dataset, and verifies the output CSV is produced. The full benchmark and updated leaderboard are generated only after merge.
+Push your branch to your fork and open a PR against `develop`. CI discovers Python detector directories by looking for `algorithms/python/*/pyproject.toml`, runs a smoke test with `uv run` on a small dataset, and verifies the output CSV is produced. The full benchmark and updated leaderboard are generated only after merge.

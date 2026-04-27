@@ -11,7 +11,7 @@ DIR="algorithms/$DETECTOR"
 
 if [ -f "$DIR/Cargo.toml" ]; then
   echo "Building $DETECTOR (Rust) in release mode..."
-  cargo build -p "$DETECTOR" --release
+  cargo build -p "$(basename "$DETECTOR")" --release
   echo "✓ Build successful"
 elif [ -f "$DIR/pyproject.toml" ]; then
   echo "Installing $DETECTOR (Python) dependencies..."

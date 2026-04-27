@@ -64,7 +64,7 @@ jobs:
 
       - name: Extract detector name
         if: steps.check_files.outputs.only_algorithms == 'true'
-        run: echo "DETECTOR_NAME=$(./scripts/extract-detector-name.sh)" >> $GITHUB_ENV
+        run: echo "DETECTOR_NAME=$(./scripts/extract-detector-name.sh ${{ github.base_ref }})" >> $GITHUB_ENV
 
       - name: Detect detector type
         if: steps.check_files.outputs.only_algorithms == 'true'
