@@ -4,7 +4,7 @@ on:
   push:
     branches: [develop]
     paths:
-      - 'algorithms/**'
+      - "algorithms/**"
   workflow_dispatch:
 
 jobs:
@@ -21,6 +21,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
 
       - name: Cache cargo registry
         uses: actions/cache@v3
