@@ -43,7 +43,7 @@ jobs:
       - name: Detect algorithm
         id: detect
         run: |
-          DETECTORS=$(git diff HEAD^ HEAD --name-only | grep -o '^algorithms/[^/]*' | sort -u | sed 's|algorithms/||')
+          DETECTORS=$(git diff HEAD^ HEAD --name-only | grep '^algorithms/' | sed 's|^algorithms/||' | awk -F'/' '{ print $1"/"$2 }' | sort -u)
           COUNT=$(echo "$DETECTORS" | grep -c . || true)
           if [ "$COUNT" -ne 1 ]; then
             echo "Expected exactly 1 algorithm change, got $COUNT — skipping"
