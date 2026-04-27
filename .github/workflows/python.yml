@@ -63,7 +63,7 @@ jobs:
         with:
           working-directory: touchstone-py
           command: build
-          args: --release --out dist --interpreter 3.11 3.12 3.13
+          args: --release --out dist --interpreter 3.11 3.12 3.13 3.14
           manylinux: ${{ matrix.manylinux }}
       - uses: actions/upload-artifact@v4
         with:
