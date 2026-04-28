@@ -85,6 +85,13 @@ jobs:
         if: steps.detect.outputs.skip != 'true'
         run: ./scripts/run-detector.sh ${{ steps.detect.outputs.name }} benchmark
 
+      - name: Fetch existing leaderboard results
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          mkdir -p leaderboard/dist
+          git fetch origin gh-pages 2>/dev/null || true
+          git show origin/gh-pages:results.csv > leaderboard/dist/results.csv 2>/dev/null || true
+
       - name: Update leaderboard
         if: steps.detect.outputs.skip != 'true'
         run: uv run --with polars --with jinja2 python3 scripts/update-leaderboard.py
