@@ -300,7 +300,8 @@
       <div class="section-label" style="margin-bottom:0;">Leaderboard</div>
       <a href="results.csv" download class="download-link">↓ Download CSV</a>
     </div>
-    <h2 class="section-title">Streaming anomaly detectors, ranked by ROC-AUC</h2>
+    <h2 class="section-title">Streaming anomaly detectors, ranked by performance</h2>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:1.25rem; line-height:1.7;">No single metric tells the full story. ROC-AUC measures overall discrimination, PR-AUC and Average Precision reward detectors that rank true anomalies highly under class imbalance, and Range-based variants (RangePrec, RangeRec, RangeF1, RangePR-AUC/VUS, RangeROC-VUS) credit detectors that identify the <em>extent</em> of anomalous segments rather than just isolated points. Choose the metric that best reflects the cost structure of your application.</p>
 
     <div class="table-wrapper">
       
@@ -348,10 +349,54 @@
             
           </tr>
           
+          <tr class="rank-2">
+            <td class="rank">
+              <span class="medal">🥈</span>
+            </td>
+            <td class="detector"><a href="https://github.com/wenig/touchstone-rs/tree/develop/algorithms/normaldistribution" target="_blank" rel="noopener">NormalDistribution</a></td>
+            
+            <td>0.3405</td>
+            
+            <td>0.0070</td>
+            
+            <td>0.0071</td>
+            
+            <td>0.0040</td>
+            
+            <td>0.0400</td>
+            
+            <td>0.0073</td>
+            
+            <td>0.0038</td>
+            
+            <td>0.0008</td>
+            
+            <td>0.0013</td>
+            
+            <td>0.0184</td>
+            
+            <td>0.0222</td>
+            
+            <td>0.4667</td>
+            
+            <td>0.0009</td>
+            
+          </tr>
+          
         </tbody>
       </table>
       
     </div>
+
+    
+    <div style="margin-top: 2.5rem;">
+      <h2 class="section-title">Time vs Quality (VUS Score)</h2>
+      <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:1.25rem; line-height:1.7;">Streaming detectors must process each data point in real time — a high-accuracy detector that cannot keep up with the data rate is unusable in practice. This plot reveals the trade-off: detectors in the upper-left corner offer the best of both worlds, while those in the lower-right sacrifice throughput without a quality gain. Quality is expressed as the mean of RangePR-VUS and RangeROC-VUS — metrics that integrate detector performance across all thresholds and temporal extents, making them the most comprehensive measure for streaming anomaly detection.</p>
+      <div class="table-wrapper" style="padding: 1.5rem 1.5rem 1rem;">
+        <svg id="scatter-plot" viewBox="0 0 800 380" style="width:100%; height:auto; display:block;"></svg>
+      </div>
+    </div>
+    
 
     <footer>
       <div>A benchmarking framework for streaming anomaly detection algorithms.</div>
@@ -408,5 +453,95 @@
       });
     }
   </script>
+  
+  <script>
+    (function () {
+      const raw = [{"AvgPrec": 0.010805875304198069, "F1": 0.018165304268846504, "PR-AUC": 0.010499694533965353, "Precision": 0.00999000999000999, "ROC-AUC": 0.5167868686868665, "RangeF1": 0.0021418372203712522, "RangePR-AUC": 0.008104265944641111, "RangePR-VUS": 0.0177075472018664, "RangePrec": 0.00995575221238938, "RangeROC-VUS": 0.5213546883649707, "RangeRec": 0.0012000000000000001, "Recall": 0.1, "detector": "Baseline", "time_sec": 3.3167e-05}, {"AvgPrec": 0.007140768376741504, "F1": 0.007266121707538601, "PR-AUC": 0.006963754581142185, "Precision": 0.003996003996003996, "ROC-AUC": 0.3404990907254001, "RangeF1": 0.0013223140495867767, "RangePR-AUC": 0.01840637046122135, "RangePR-VUS": 0.022160388087039642, "RangePrec": 0.0038095238095238095, "RangeROC-VUS": 0.4667023298993254, "RangeRec": 0.0008, "Recall": 0.04, "detector": "NormalDistribution", "time_sec": 0.0008885}];
+      const data = raw
+        .filter(d => d['RangePR-VUS'] != null && d['RangeROC-VUS'] != null && d['time_sec'] != null)
+        .map(d => ({ ...d, _vus: (d['RangePR-VUS'] + d['RangeROC-VUS']) / 2 }));
+      if (!data.length) return;
+
+      const svg = document.getElementById('scatter-plot');
+      const VW = 800, VH = 380;
+      const M = { top: 24, right: 24, bottom: 56, left: 72 };
+      const pw = VW - M.left - M.right;
+      const ph = VH - M.top - M.bottom;
+      const NS = 'http://www.w3.org/2000/svg';
+
+      function el(tag, attrs, parent) {
+        const e = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (parent) parent.appendChild(e);
+        return e;
+      }
+
+      function txt(content, attrs, parent) {
+        const e = el('text', attrs, parent);
+        e.textContent = content;
+        return e;
+      }
+
+      const xVals = data.map(d => d['time_sec']);
+      const yVals = data.map(d => d['_vus']);
+      const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+      const yMin = 0, yMax = 1;
+
+      const xRange = xMax - xMin || 1;
+      const yRange = yMax - yMin || 1;
+      const xS = v => M.left + ((v - xMin) / xRange) * pw;
+      const yS = v => M.top + ph - ((v - yMin) / yRange) * ph;
+
+      const gridN = 5;
+      for (let i = 0; i <= gridN; i++) {
+        const y = M.top + (ph / gridN) * i;
+        el('line', { x1: M.left, y1: y, x2: M.left + pw, y2: y, stroke: '#2a2a35', 'stroke-width': 1 }, svg);
+        const v = yMin + yRange * (1 - i / gridN);
+        txt(v.toFixed(3), { x: M.left - 8, y: y + 4, 'text-anchor': 'end', fill: '#9a9aa5', 'font-size': '11', 'font-family': 'JetBrains Mono, monospace' }, svg);
+      }
+      for (let i = 0; i <= gridN; i++) {
+        const x = M.left + (pw / gridN) * i;
+        el('line', { x1: x, y1: M.top, x2: x, y2: M.top + ph, stroke: '#2a2a35', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, svg);
+        const v = xMin + xRange * (i / gridN);
+        txt(v.toFixed(2) + 's', { x: x, y: M.top + ph + 18, 'text-anchor': 'middle', fill: '#9a9aa5', 'font-size': '11', 'font-family': 'JetBrains Mono, monospace' }, svg);
+      }
+
+      el('line', { x1: M.left, y1: M.top, x2: M.left, y2: M.top + ph, stroke: '#2a2a35', 'stroke-width': 1 }, svg);
+      el('line', { x1: M.left, y1: M.top + ph, x2: M.left + pw, y2: M.top + ph, stroke: '#2a2a35', 'stroke-width': 1 }, svg);
+
+      txt('Time (s)', { x: M.left + pw / 2, y: VH - 8, 'text-anchor': 'middle', fill: '#9a9aa5', 'font-size': '12', 'font-family': 'Inter, sans-serif', 'font-weight': '500', 'letter-spacing': '0.05em' }, svg);
+      const yLabelEl = txt('VUS Score', { x: 14, y: M.top + ph / 2, 'text-anchor': 'middle', fill: '#9a9aa5', 'font-size': '12', 'font-family': 'Inter, sans-serif', 'font-weight': '500', 'letter-spacing': '0.05em' }, svg);
+      yLabelEl.setAttribute('transform', `rotate(-90, 14, ${M.top + ph / 2})`);
+
+      const tooltip = document.createElement('div');
+      tooltip.style.cssText = 'position:fixed;background:#141419;border:1px solid #2a2a35;border-radius:6px;padding:0.5rem 0.75rem;font-size:12px;pointer-events:none;opacity:0;transition:opacity 0.15s;color:#f5f5f7;font-family:Inter,sans-serif;z-index:1000;line-height:1.6;';
+      document.body.appendChild(tooltip);
+
+      data.forEach(d => {
+        const cx = xS(d['time_sec']), cy = yS(d['_vus']);
+        el('circle', { cx, cy, r: 8, fill: 'rgba(255,107,44,0.15)', stroke: 'none' }, svg);
+        const circle = el('circle', { cx, cy, r: 5, fill: '#ff6b2c', stroke: 'rgba(255,107,44,0.4)', 'stroke-width': 3, style: 'cursor:pointer;transition:r 0.12s,fill 0.12s;' }, svg);
+
+        circle.addEventListener('mouseenter', e => {
+          circle.setAttribute('r', 7);
+          circle.setAttribute('fill', '#ff8c52');
+          tooltip.innerHTML = `<strong style="color:#ff6b2c">${d.detector}</strong><br>VUS Score: ${d['_vus'].toFixed(4)}<br>Time: ${d['time_sec'].toFixed(3)} s`;
+          tooltip.style.opacity = '1';
+        });
+        circle.addEventListener('mousemove', e => {
+          tooltip.style.left = (e.clientX + 14) + 'px';
+          tooltip.style.top = (e.clientY - 12) + 'px';
+        });
+        circle.addEventListener('mouseleave', () => {
+          circle.setAttribute('r', 5);
+          circle.setAttribute('fill', '#ff6b2c');
+          tooltip.style.opacity = '0';
+        });
+
+        txt(d.detector, { x: cx + 9, y: cy + 4, fill: '#9a9aa5', 'font-size': '11', 'font-family': 'Inter, sans-serif', style: 'pointer-events:none;' }, svg);
+      });
+    })();
+  </script>
+  
 </body>
 </html>
