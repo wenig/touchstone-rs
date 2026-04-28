@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Python dependencies
         if: steps.detect.outputs.skip != 'true'
-        run: pip install polars jinja2
+        run: uv pip install --system polars jinja2
 
       - name: Run detector
         if: steps.detect.outputs.skip != 'true'
@@ -83,7 +83,7 @@ jobs:
 
       - name: Update leaderboard
         if: steps.detect.outputs.skip != 'true'
-        run: python3 scripts/update-leaderboard.py
+        run: uv run python3 scripts/update-leaderboard.py
 
       - name: Deploy to GitHub Pages
         if: steps.detect.outputs.skip != 'true'
