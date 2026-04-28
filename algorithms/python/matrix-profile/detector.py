@@ -14,12 +14,13 @@ _MAX_BUFFER = 3000
 
 
 class Stumpi(Detector):
-	"""Streaming anomaly detector based on matrix profiles.
+    """Streaming anomaly detector based on matrix profiles.
 
-	Uses the STUMPY library to compute matrix profiles on a sliding window
-	of data. The anomaly score is the minimum distance in the matrix profile,
-	aggregated across all dimensions.
-	"""
+    Uses the STUMPY library to compute matrix profiles on a sliding window
+    of data. The anomaly score is the minimum distance in the matrix profile,
+    aggregated across all dimensions.
+    """
+
     @classmethod
     def name(cls) -> str:
         """Return the name of this detector."""
