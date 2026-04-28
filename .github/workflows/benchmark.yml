@@ -81,17 +81,13 @@ jobs:
         if: steps.detect.outputs.skip != 'true'
         run: ./scripts/build-detector.sh ${{ steps.detect.outputs.name }}
 
-      - name: Install Python dependencies
-        if: steps.detect.outputs.skip != 'true'
-        run: uv pip install --system polars jinja2
-
       - name: Run detector
         if: steps.detect.outputs.skip != 'true'
         run: ./scripts/run-detector.sh ${{ steps.detect.outputs.name }} benchmark
 
       - name: Update leaderboard
         if: steps.detect.outputs.skip != 'true'
-        run: uv run python3 scripts/update-leaderboard.py
+        run: uv run --with polars --with jinja2 python3 scripts/update-leaderboard.py
 
       - name: Deploy to GitHub Pages
         if: steps.detect.outputs.skip != 'true'
