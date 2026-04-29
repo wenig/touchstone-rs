@@ -1,0 +1,9 @@
+[package]
+name = "sand"
+version = "0.1.0"
+edition = "2024"
+description = "http://www.vldb.org/pvldb/vol14/p1717-boniol.pdf"
+
+[dependencies]
+touchstone-rs = { path = "../../../touchstone-rs"}
+rustfft = "6"
