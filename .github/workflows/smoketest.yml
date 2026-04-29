@@ -148,3 +148,7 @@ jobs:
         if: steps.check_files.outputs.only_algorithms == 'true' && steps.detect_type.outputs.type == 'python'
         run: ./scripts/run-detector.sh ${{ env.DETECTOR_NAME }} tests/fixtures/smoketest
         timeout-minutes: 10
+
+      - name: Validate output (no NaNs)
+        if: steps.check_files.outputs.only_algorithms == 'true'
+        run: ./scripts/check-output.sh
