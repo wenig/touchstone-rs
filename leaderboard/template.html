@@ -402,7 +402,7 @@
     (function () {
       const raw = {{ rows | tojson | safe }};
       const data = raw
-        .filter(d => d['RangePR-VUS'] != null && d['RangeROC-VUS'] != null && d['time_sec'] != null)
+        .filter(d => Number.isFinite(d['RangePR-VUS']) && Number.isFinite(d['RangeROC-VUS']) && Number.isFinite(d['time_sec']))
         .map(d => ({ ...d, _vus: (d['RangePR-VUS'] + d['RangeROC-VUS']) / 2 }));
       if (!data.length) return;
 
