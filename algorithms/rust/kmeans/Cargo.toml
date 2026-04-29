@@ -1,0 +1,10 @@
+[package]
+name = "kmeans"
+version = "0.1.0"
+edition = "2024"
+description = "Streaming K-Means Anomaly Detection."
+
+
+[dependencies]
+rand = "0.10.1"
+touchstone-rs = { path = "../../../touchstone-rs"}
