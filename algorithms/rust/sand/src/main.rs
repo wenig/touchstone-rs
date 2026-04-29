@@ -11,9 +11,9 @@ use kshape::{KShapeResult, build_centroid, kshape};
 use touchstone_rs::{Detector, touchstone_main};
 
 const L: usize = 100;
-const L_THETA_MULT: usize = 3;
+const L_THETA_MULT: usize = 1;
 const K: usize = 3;
-const BSIZE: usize = 100;
+const BSIZE: usize = 300;
 const ALPHA: f32 = 0.5;
 
 // ── model ────────────────────────────────────────────────────────────────────

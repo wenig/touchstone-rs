@@ -1,6 +1,6 @@
 use crate::distance::{dominant_eigenvec, msbd, outer_add, znorm_multi};
 
-pub const KSHAPE_ITER: usize = 10;
+pub const KSHAPE_ITER: usize = 5;
 pub const POWER_ITER: usize = 20;
 
 /// Output of a k-Shape clustering run.
@@ -41,12 +41,12 @@ pub fn kshape(subseqs: &[Vec<f32>], n: usize, d: usize, k: usize) -> KShapeResul
 
         // Assignment: closest centroid by msbd.
         for (idx, s) in subseqs.iter().enumerate() {
-            assignments[idx] = (0..k)
-                .min_by(|&a, &b| {
-                    msbd(s, &centroids[a], n, d)
-                        .partial_cmp(&msbd(s, &centroids[b], n, d))
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
+            let dists: Vec<f32> = (0..k).map(|ci| msbd(s, &centroids[ci], n, d)).collect();
+            assignments[idx] = dists
+                .iter()
+                .enumerate()
+                .min_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+                .map(|(i, _)| i)
                 .unwrap_or(0);
         }
 
