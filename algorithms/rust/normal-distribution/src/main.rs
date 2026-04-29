@@ -74,18 +74,18 @@ impl Detector for NormalDistribution {
     fn update(&mut self, point: &[f32]) -> f32 {
         let zscore = self.zscore_against_current(point);
 
-        if self.buffer.len() == self.capacity {
-            if let Some(old) = self.buffer.pop_front() {
-                for i in 0..self.dim {
-                    self.sum[i] -= old[i];
-                    self.sum_sq[i] -= old[i].powi(2);
-                }
+        if self.buffer.len() == self.capacity
+            && let Some(old) = self.buffer.pop_front()
+        {
+            for (i, &val) in old.iter().enumerate().take(self.dim) {
+                self.sum[i] -= val;
+                self.sum_sq[i] -= val.powi(2);
             }
         }
 
-        for i in 0..self.dim {
-            self.sum[i] += point[i];
-            self.sum_sq[i] += point[i].powi(2)
+        for (i, &p) in point.iter().enumerate().take(self.dim) {
+            self.sum[i] += p;
+            self.sum_sq[i] += p.powi(2);
         }
 
         self.buffer.push_back(point.to_vec());
