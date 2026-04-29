@@ -1353,6 +1353,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "kmeans"
+version = "0.1.0"
+dependencies = [
+ "rand 0.10.1",
+ "touchstone-rs",
+]
+
+[[package]]
 name = "leb128fmt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
