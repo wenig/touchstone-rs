@@ -426,14 +426,16 @@
         return e;
       }
 
+      const EPS = 1e-6;
       const xVals = data.map(d => d['time_sec']);
       const yVals = data.map(d => d['_vus']);
-      const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+      const xLogVals = xVals.map(v => Math.log10(Math.max(v, EPS)));
+      const xMin = Math.min(...xLogVals), xMax = Math.max(...xLogVals);
       const yMin = 0, yMax = 1;
 
       const xRange = xMax - xMin || 1;
       const yRange = yMax - yMin || 1;
-      const xS = v => M.left + ((v - xMin) / xRange) * pw;
+      const xS = v => M.left + ((Math.log10(Math.max(v, EPS)) - xMin) / xRange) * pw;
       const yS = v => M.top + ph - ((v - yMin) / yRange) * ph;
 
       const gridN = 5;
@@ -446,8 +448,10 @@
       for (let i = 0; i <= gridN; i++) {
         const x = M.left + (pw / gridN) * i;
         el('line', { x1: x, y1: M.top, x2: x, y2: M.top + ph, stroke: '#2a2a35', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, svg);
-        const v = xMin + xRange * (i / gridN);
-        txt(v.toFixed(2) + 's', { x: x, y: M.top + ph + 18, 'text-anchor': 'middle', fill: '#9a9aa5', 'font-size': '11', 'font-family': 'JetBrains Mono, monospace' }, svg);
+        const logV = xMin + xRange * (i / gridN);
+        const v = Math.pow(10, logV);
+        const vLabel = v < 0.001 ? v.toExponential(1) + 's' : v < 1 ? v.toFixed(3) + 's' : v.toFixed(2) + 's';
+        txt(vLabel, { x: x, y: M.top + ph + 18, 'text-anchor': 'middle', fill: '#9a9aa5', 'font-size': '11', 'font-family': 'JetBrains Mono, monospace' }, svg);
       }
 
       el('line', { x1: M.left, y1: M.top, x2: M.left, y2: M.top + ph, stroke: '#2a2a35', 'stroke-width': 1 }, svg);
