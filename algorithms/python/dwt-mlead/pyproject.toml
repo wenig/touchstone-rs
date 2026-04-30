@@ -1,0 +1,15 @@
+[project]
+name = "dwt-mlead"
+version = "0.1.0"
+description = "https://www.gm.th-koeln.de/ciopwebpub/Thill18.d/AoDS2018.pdf"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "touchstone-py",
+]
+
+[dependency-groups]
+dev = [
+    "numpy>=2",
+    "pytest>=8",
+]
