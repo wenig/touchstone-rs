@@ -1,0 +1,12 @@
+[project]
+name = "tinytimemixer"
+version = "0.1.0"
+description = "https://huggingface.co/ibm-granite/granite-timeseries-ttm-r2"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "touchstone-py",
+    "transformers",
+    "torch",
+    "numpy",
+]
