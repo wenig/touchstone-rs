@@ -33,7 +33,7 @@ fn sorted_pairs(labels: &[u8], scores: &[f32]) -> Vec<(f32, u8)> {
         .zip(labels.iter())
         .map(|(&s, &l)| (s, l))
         .collect();
-    pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    pairs.sort_by(|a, b| b.0.total_cmp(&a.0));
     pairs
 }
 
