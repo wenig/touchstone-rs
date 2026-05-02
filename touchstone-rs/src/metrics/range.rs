@@ -292,7 +292,7 @@ impl Metric for RangePrecision {
     }
     fn score(&self, labels: &[u8], scores: &[f32]) -> f64 {
         let mut sorted = scores.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.total_cmp(b));
         let idx = ((self.percentile / 100.0) * (sorted.len() - 1) as f64).round() as usize;
         let thresh = sorted[idx.min(sorted.len() - 1)];
         let pred = apply_threshold(scores, thresh);
@@ -306,7 +306,7 @@ impl Metric for RangeRecall {
     }
     fn score(&self, labels: &[u8], scores: &[f32]) -> f64 {
         let mut sorted = scores.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.total_cmp(b));
         let idx = ((self.percentile / 100.0) * (sorted.len() - 1) as f64).round() as usize;
         let thresh = sorted[idx.min(sorted.len() - 1)];
         let pred = apply_threshold(scores, thresh);
@@ -320,7 +320,7 @@ impl Metric for RangeFScore {
     }
     fn score(&self, labels: &[u8], scores: &[f32]) -> f64 {
         let mut sorted = scores.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.total_cmp(b));
         let idx = ((self.percentile / 100.0) * (sorted.len() - 1) as f64).round() as usize;
         let thresh = sorted[idx.min(sorted.len() - 1)];
         let pred = apply_threshold(scores, thresh);
@@ -340,7 +340,7 @@ pub(crate) fn range_pr_auc_impl(
 ) -> f64 {
     // Collect unique thresholds (capped at max_samples evenly spaced).
     let mut sorted_scores = scores.to_vec();
-    sorted_scores.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted_scores.sort_by(|a, b| a.total_cmp(b));
     sorted_scores.dedup_by(|a, b| (*a - *b).abs() < f32::EPSILON);
 
     let step = if sorted_scores.len() <= max_samples {
@@ -364,7 +364,7 @@ pub(crate) fn range_pr_auc_impl(
     // Add sentinel endpoints.
     points.push((0.0, 1.0));
     points.push((1.0, 0.0));
-    points.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    points.sort_by(|a, b| a.0.total_cmp(&b.0));
     points.dedup_by(|a, b| (a.0 - b.0).abs() < 1e-12);
 
     // Trapezoidal integration.

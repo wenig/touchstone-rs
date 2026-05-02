@@ -26,7 +26,7 @@ pub(crate) fn roc_auc(labels: &[u8], scores: &[f32]) -> f64 {
         .zip(labels.iter())
         .map(|(&s, &l)| (s, l))
         .collect();
-    pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    pairs.sort_by(|a, b| b.0.total_cmp(&a.0));
 
     // Walk the sorted list and trace the ROC curve via trapezoidal rule.
     let mut auc = 0.0_f64;
