@@ -1,0 +1,17 @@
+[project]
+name = "tirex"
+version = "0.1.0"
+description = "https://huggingface.co/NX-AI/TiRex"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "touchstone-py == 0.2.0",
+    "tirex-ts",
+    "torch",
+    "numpy",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
