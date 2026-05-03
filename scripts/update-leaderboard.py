@@ -42,6 +42,7 @@ def merge_results(new: pl.DataFrame) -> pl.DataFrame:
 
 def build_leaderboard(df: pl.DataFrame) -> list[dict]:
     """Average each metric across datasets per detector, sorted by ROC-AUC desc."""
+    df = df.with_columns(pl.col(m).fill_nan(0) for m in METRICS)
     agg = (
         df.group_by("detector")
         .agg([pl.col(m).mean() for m in METRICS])
