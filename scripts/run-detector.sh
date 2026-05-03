@@ -16,7 +16,7 @@ if [ ! -d "$DATA_DIR" ]; then
 fi
 
 if [ -f "$DIR/Cargo.toml" ]; then
-  cargo run -p "$DETECTOR" --release -- --data-dir "$DATA_DIR"
+  cargo run -p "$(basename "$DETECTOR")" --release -- --data-dir "$DATA_DIR"
 elif [ -f "$DIR/pyproject.toml" ]; then
   uv run --project "$DIR" --no-sync python "$DIR/detector.py" --data-dir "$DATA_DIR"
 else

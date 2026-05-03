@@ -248,7 +248,7 @@ This runs a rolling z-score detector (window = 20) against all datasets in `data
 
 ## Contributing an Algorithm
 
-Touchstone-rs accepts new streaming anomaly detectors via pull request, each one living as its own crate under `algorithms/` and picked up automatically by the workspace. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork, add crate, implement `Detector`, open PR) and how CI validates submissions.
+Touchstone-rs accepts new streaming anomaly detectors via pull request. Rust detectors live as their own crate under `algorithms/rust/` and are picked up automatically by the workspace; Python detectors live under `algorithms/python/`. See [`ADD_ALGORITHM.md`](ADD_ALGORITHM.md) for the step-by-step workflow (fork, implement, open PR) and how CI validates submissions.
 
 ## References
 

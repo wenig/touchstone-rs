@@ -1,11 +1,18 @@
 #!/bin/bash
 set -e
 
-# Get list of changed files compared to main
-CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+BASE_REF=${1:-main}
+
+# Get list of changed files compared to base branch
+CHANGED_FILES=$(git diff --name-only origin/${BASE_REF}...HEAD)
 
 # Extract detector directories from algorithms/
-DETECTORS=$(echo "$CHANGED_FILES" | grep -o '^algorithms/[^/]*' | sort -u | sed 's|algorithms/||')
+# All detectors are nested under algorithms/rust/ or algorithms/python/
+DETECTORS=$(echo "$CHANGED_FILES" \
+  | grep '^algorithms/' \
+  | sed 's|^algorithms/||' \
+  | awk -F'/' '{ print $1"/"$2 }' \
+  | sort -u)
 
 # Count detectors
 COUNT=$(echo "$DETECTORS" | grep -c . || true)

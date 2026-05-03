@@ -1,0 +1,5 @@
+# TinyTimeMixer
+
+**Source:** [ibm-granite/granite-timeseries-ttm-r2](https://huggingface.co/ibm-granite/granite-timeseries-ttm-r2) — Ekambaram et al., *TTMs: Fast Multi-level Tiny Time Mixers for Improved Zero-shot and Few-shot Forecasting of Multivariate Time Series*, NeurIPS 2024.
+
+TinyTimeMixer (TTM) is a compact pretrained forecasting model based on a hierarchical MLP-Mixer architecture with adaptive multi-resolution patching. It operates in a channel-independent mode, processing each time series dimension with shared weights across channels. This detector uses TTM zero-shot: given a 1024-point context window, it forecasts the next 5 steps in a single forward pass and scores each observation as the mean absolute error between the pre-computed prediction and the actual value. Forecasting 5 steps per inference call reduces the number of model evaluations by 5× compared to single-step forecasting. Inference begins after a 512-point warmup; the context window grows to its full 1024 points over the subsequent 512 observations. The model produces no score during the warmup period.

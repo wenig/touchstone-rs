@@ -1,0 +1,8 @@
+[package]
+name = "normal-distribution"
+version = "0.1.0"
+edition = "2024"
+description = "Builds normal distribution of incoming values and takes zscore as anomaly measure."
+
+[dependencies]
+touchstone-rs = { path = "../../../touchstone-rs"}
