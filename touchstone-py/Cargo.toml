@@ -9,4 +9,4 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = "0.28.3"
 polars = { version = "0.53", default-features = false, features = ["ipc"] }
-touchstone-rs = "0.2"
+touchstone-rs = "0.3"

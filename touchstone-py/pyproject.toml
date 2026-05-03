@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "touchstone-py"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Rust library for benchmarking streaming anomaly detectors against labeled time-series datasets"
 readme = "../README.md"
 authors = [
